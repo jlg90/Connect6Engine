@@ -16,6 +16,8 @@ def make_move(board, move, color):
     board[move.positions[0].x][move.positions[0].y] = color
     board[move.positions[1].x][move.positions[1].y] = color
 
+
+
 def unmake_move(board, move):
     board[move.positions[0].x][move.positions[0].y] = Defines.NOSTONE
     board[move.positions[1].x][move.positions[1].y] = Defines.NOSTONE
