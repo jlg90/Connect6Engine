@@ -15,7 +15,7 @@ class SearchEngine():
 
     def alpha_beta_search(self, depth, alpha, beta, ourColor, bestMove, preMove):
     
-        #Check game result
+        #Check game result //
         if (is_win_by_premove(self.m_board, preMove)):
             if (ourColor == self.m_chess_type):
                 #Opponent wins.
