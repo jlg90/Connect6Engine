@@ -16,111 +16,124 @@ class SearchEngine():
         self.m_chess_type = color
         self.m_alphabeta_depth = alphabeta_depth
         self.m_total_nodes = 0
+        
+    def alpha_beta_search(self, depth, alpha, beta, maximizing_player, best_move, current_move):
+        if depth == 0 or self.is_terminal_node():
+            return self.evaluate_board(maximizing_player)
 
-    def alpha_beta_search(self, depth, alpha, beta, ourColor, bestMove, preMove):
-        if depth == 0:
-            return self.evaluate_position()
-
-        if ourColor == self.m_chess_type:
-            bestValue = float('-inf')
-            moves = self.generate_moves()
-            for move in moves:
-                # Realiza el movimiento
-                make_move(self.m_board,move, ourColor)
-                value = self.alpha_beta_search(depth - 1, alpha, beta, self.opponent_color(), bestMove, move)
-                # Deshaz el movimiento
-                unmake_move(self.m_board,move)
-                
-
-                if value > bestValue:
-                    bestValue = value
-                    if bestMove is not None:
-                        bestMove.positions[0] = move.positions[0]
-                        bestMove.positions[1] = move.positions[1]
-
-                alpha = max(alpha, bestValue)
-                if beta <= alpha:
-                    break  # Poda alfa-beta
-
-            return bestValue
+        if maximizing_player:
+            max_eval = float('-inf')
+            for move in self.get_possible_moves():
+                if self.is_valid_move(move):
+                    self.make_move(move, self.m_chess_type)
+                    eval = self.alpha_beta_search(depth - 1, alpha, beta, False, best_move, current_move)
+                    self.undo_move(move)
+                    if eval > max_eval:
+                        max_eval = eval
+                        if current_move is not None:
+                            current_move.positions[0].x = move.positions[0].x
+                            current_move.positions[0].y = move.positions[0].y
+                            current_move.positions[1].x = move.positions[1].x
+                            current_move.positions[1].y = move.positions[1].y
+                            current_move.score = move.score
+                    alpha = max(alpha, eval)
+                    if beta <= alpha:
+                        break
+            return max_eval
         else:
-            bestValue = float('inf')
-            moves = self.generate_moves()
-            for move in moves:
-                # Realiza el movimiento
-                
-                make_move(self.m_board,move, ourColor)
-                value = self.alpha_beta_search(depth - 1, alpha, beta, self.opponent_color(), bestMove, move)
-                # Deshaz el movimiento
-                unmake_move(self.m_board,move)
+            min_eval = float('inf')
+            for move in self.get_possible_moves():
+                if self.is_valid_move(move):
+                    self.make_move(move, self.m_chess_type)
+                    eval = self.alpha_beta_search(depth - 1, alpha, beta, True, best_move, current_move)
+                    self.undo_move(move)
+                    if eval < min_eval:
+                        min_eval = eval
+                        if current_move is not None:
+                            current_move.positions[0].x = move.positions[0].x
+                            current_move.positions[0].y = move.positions[0].y
+                            current_move.positions[1].x = move.positions[1].x
+                            current_move.positions[1].y = move.positions[1].y
+                            current_move.score = move.score
+                    beta = min(beta, eval)
+                    if beta <= alpha:
+                        break
+            return min_eval
 
-                if value < bestValue:
-                    bestValue = value
-                    if bestMove is not None:
-                        bestMove.positions[0] = move.positions[0]
-                        bestMove.positions[1] = move.positions[1]
+    def is_valid_move(self, move):
+        x, y = move.positions[0].x, move.positions[0].y
+        return self.m_board[x][y] == Defines.NOSTONE
 
-                beta = min(beta, bestValue)
-                if beta <= alpha:
-                    break
+    
+    def evaluate_board(self, maximizing_player):
+        if maximizing_player:
+            player_color = Defines.BLACK
+            opponent_color = Defines.WHITE
+        else:
+            player_color = Defines.WHITE
+            opponent_color = Defines.BLACK
 
-            return bestValue
-
-    def evaluate_position(self):
-        # Aquí debes implementar la lógica para evaluar la posición y devolver la puntuación.
-        # Puedes utilizar la lógica de tu función original 'evaluate_position'.
-        player_color = self.m_chess_type
-        opponent_color = self.opponent_color()
-
-        player_score = 0
-        opponent_score = 0
-
-        # Direcciones posibles para buscar secuencias
-        directions = [(1, 0), (0, 1), (1, 1), (-1, 1)]
-
-        for direction in directions:
-            dx, dy = direction
-            for x in range(1, len(self.m_board) - 1):
-                for y in range(1, len(self.m_board[x]) - 1):
-                    if self.m_board[x][y] == player_color:
-                        sequence_length = 1
-                        for i in range(1, 6):
-                            nx, ny = x + i * dx, y + i * dy
-                            if 1 <= nx < len(self.m_board) - 1 and 1 <= ny < len(self.m_board[x]) - 1:
-                                if self.m_board[nx][ny] == player_color:
-                                    sequence_length += 1
-                                else:
-                                    break
-                            else:
-                                break
-
-                        if sequence_length >= 6:
-                            player_score += 1000  # Jugador gana
-                        elif sequence_length >= 5:
-                            player_score += 100  # Potencialmente ganador
+        player_score = self.calculate_score(player_color)
+        opponent_score = self.calculate_score(opponent_color)
 
         return player_score - opponent_score
 
-    def generate_moves(self):
-        # Aquí debes implementar la lógica para generar movimientos y devolver una lista de movimientos válidos.
-        # Puedes utilizar la lógica de tu función original 'generate_moves'.
-        empty_moves = []
+    def make_move(self, move, color):
+        self.m_board[move.positions[0].x][move.positions[0].y] = color
 
-        for x in range(1, len(self.m_board) - 1):
-            for y in range(1, len(self.m_board[x]) - 1):
-                if self.m_board[x][y] == Defines.NOSTONE:
+    def undo_move(self, move):
+        self.m_board[move.positions[0].x][move.positions[0].y] = Defines.NOSTONE
+
+    def get_possible_moves(self):
+        moves = []
+        for i in range(1, Defines.GRID_NUM - 1):
+            for j in range(1, Defines.GRID_NUM - 1):
+                if self.m_board[i][j] == Defines.NOSTONE:
                     move = StoneMove()
-                    move.positions[0].x = x
-                    move.positions[0].y = y
-                    move.positions[1].x = x
-                    move.positions[1].y = y
-                    empty_moves.append(move)
+                    move.positions[0].x = i
+                    move.positions[0].y = j
+                    move.score = 0
+                    moves.append(move)
+        return moves
 
-        return empty_moves
+    def calculate_score(self, color):
+        # Inicializamos la puntuación del jugador
+        player_score = 0
 
-    def opponent_color(self):
-        # Si el color es blanco, devuelve negro; si es negro, devuelve blanco
-        return Defines.BLACK if self.m_chess_type == Defines.WHITE else Defines.WHITE
+        # Definimos direcciones en las que buscar piedras conectadas
+        directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
+
+        for i in range(1, Defines.GRID_NUM - 1):
+            for j in range(1, Defines.GRID_NUM - 1):
+                if self.m_board[i][j] == color:
+                    # Buscamos patrones de piedras en línea en todas las direcciones
+                    for direction in directions:
+                        stones_in_line = 1
+                        for step in range(1, 6):  # Buscamos hasta 6 piedras en línea
+                            x = i + step * direction[0]
+                            y = j + step * direction[1]
+                            if isValidPos(x, y) and self.m_board[x][y] == color:
+                                stones_in_line += 1
+                            else:
+                                break
+                        # Calificamos el patrón de piedras en línea
+                        if stones_in_line == 6:
+                            # El jugador tiene 6 en línea, ¡ganó el juego!
+                            return Defines.MAXINT
+                        player_score += stones_in_line
+
+        return player_score
+
+    def is_terminal_node(self):
+        # Verificamos si el juego ha llegado a su fin
+        for i in range(1, Defines.GRID_NUM - 1):
+            for j in range(1, Defines.GRID_NUM - 1):
+                if self.m_board[i][j] == Defines.NOSTONE:
+                    # Todavía hay espacios vacíos en el tablero, el juego no ha terminado.
+                    return False
+
+    # Si no hay espacios vacíos, el juego termina en empate.
+        return True
 
 def flush_output():
     import sys
