@@ -13,6 +13,9 @@ class Defines:
     # Max values in the evaluation.
     MAXINT=20000
     MININT=-20000
+    NUMOFONE = 1
+    NUMOFTWO = 2
+
 
 class StonePosition:
     def __init__(self,x,y):

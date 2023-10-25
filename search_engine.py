@@ -18,53 +18,57 @@ class SearchEngine():
         self.m_total_nodes = 0
 
     def alpha_beta_search(self, depth, alpha, beta, ourColor, bestMove, preMove):
-        # Verificar si se ha alcanzado un estado terminal o si alguien ha ganado.
-        if depth == 0 or is_win_by_premove(self.m_board, preMove):
+        if depth == 0:
             return self.evaluate_position()
 
         if ourColor == self.m_chess_type:
-            max_eval = Defines.MININT
+            bestValue = float('-inf')
             moves = self.generate_moves()
             for move in moves:
-                make_move(self.m_board, move, ourColor)
-                eval = self.alpha_beta_search(depth - 1, alpha, beta, self.opponent_color(), bestMove, move)
-                unmake_move(self.m_board, move)
+                # Realiza el movimiento
+                make_move(self.m_board,move, ourColor)
+                value = self.alpha_beta_search(depth - 1, alpha, beta, self.opponent_color(), bestMove, move)
+                # Deshaz el movimiento
+                unmake_move(self.m_board,move)
                 
-                # Actualizar el mejor movimiento si es necesario.
-                if eval > max_eval:
-                    max_eval = eval
-                    if depth == self.m_alphabeta_depth:
-                        bestMove.positions[0].x = move.positions[0].x
-                        bestMove.positions[0].y = move.positions[0].y
-                        bestMove.positions[1].x = move.positions[1].x
-                        bestMove.positions[1].y = move.positions[1].y
-                
-                # Realizar poda alfa-beta.
-                alpha = max(alpha, eval)
-                if alpha >= beta:
-                    break
-            return max_eval
-        else:
-            min_eval = Defines.MAXINT
-            moves = self.generate_moves()
-            for move in moves:
-                make_move(self.m_board, move, ourColor)
-                eval = self.alpha_beta_search(depth - 1, alpha, beta, self.opponent_color(), bestMove, move)
-                unmake_move(self.m_board, move)
-                
-                # Realizar poda alfa-beta.
-                min_eval = min(min_eval, eval)
-                beta = min(beta, eval)
-                if alpha >= beta:
-                    break
-            return min_eval
 
-        
+                if value > bestValue:
+                    bestValue = value
+                    if bestMove is not None:
+                        bestMove.positions[0] = move.positions[0]
+                        bestMove.positions[1] = move.positions[1]
+
+                alpha = max(alpha, bestValue)
+                if beta <= alpha:
+                    break  # Poda alfa-beta
+
+            return bestValue
+        else:
+            bestValue = float('inf')
+            moves = self.generate_moves()
+            for move in moves:
+                # Realiza el movimiento
+                
+                make_move(self.m_board,move, ourColor)
+                value = self.alpha_beta_search(depth - 1, alpha, beta, self.opponent_color(), bestMove, move)
+                # Deshaz el movimiento
+                unmake_move(self.m_board,move)
+
+                if value < bestValue:
+                    bestValue = value
+                    if bestMove is not None:
+                        bestMove.positions[0] = move.positions[0]
+                        bestMove.positions[1] = move.positions[1]
+
+                beta = min(beta, bestValue)
+                if beta <= alpha:
+                    break
+
+            return bestValue
 
     def evaluate_position(self):
-        # Evaluación para el juego Conecta 6:
-        # Contaremos la cantidad de fichas consecutivas del jugador actual en todas las direcciones (horizontal, vertical y diagonal)
-        # y otorgaremos una puntuación en función de la longitud de la secuencia.
+        # Aquí debes implementar la lógica para evaluar la posición y devolver la puntuación.
+        # Puedes utilizar la lógica de tu función original 'evaluate_position'.
         player_color = self.m_chess_type
         opponent_color = self.opponent_color()
 
@@ -98,8 +102,8 @@ class SearchEngine():
         return player_score - opponent_score
 
     def generate_moves(self):
-        # Generación de movimientos para el juego Conecta 6:
-        # Devolver una lista de objetos Move con todas las posiciones vacías en el tablero
+        # Aquí debes implementar la lógica para generar movimientos y devolver una lista de movimientos válidos.
+        # Puedes utilizar la lógica de tu función original 'generate_moves'.
         empty_moves = []
 
         for x in range(1, len(self.m_board) - 1):
