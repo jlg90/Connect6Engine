@@ -79,58 +79,90 @@ class SearchEngine():
         return player_score - opponent_score
 
     def make_move(self, move, color):
-        self.m_board[move.positions[0].x][move.positions[0].y] = color
+        for position in move.positions:
+            self.m_board[position.x][position.y] = color
 
     def undo_move(self, move):
-        self.m_board[move.positions[0].x][move.positions[0].y] = Defines.NOSTONE
+        for position in move.positions:
+            self.m_board[position.x][position.y] = Defines.NOSTONE
 
     def get_possible_moves(self):
         moves = []
-        for i in range(1, Defines.GRID_NUM - 1):
-            for j in range(1, Defines.GRID_NUM - 1):
-                if self.m_board[i][j] == Defines.NOSTONE:
-                    move = StoneMove()
-                    move.positions[0].x = i
-                    move.positions[0].y = j
-                    move.score = 0
-                    moves.append(move)
+        for i1 in range(1, Defines.GRID_NUM - 1):
+            for j1 in range(1, Defines.GRID_NUM - 1):
+                if self.is_interesting_position(i1, j1):
+                    for i2 in range(1, Defines.GRID_NUM - 1):
+                        for j2 in range(1, Defines.GRID_NUM - 1):
+                            if self.is_interesting_position(i2, j2) and (i1 != i2 or j1 != j2):
+                                move = StoneMove()
+                                move.positions[0].x = i1
+                                move.positions[0].y = j1
+                                move.positions[1].x = i2
+                                move.positions[1].y = j2
+                                self.make_move(move, self.m_chess_type) 
+                                move.score = self.calculate_score(self.m_chess_type)  
+                                self.undo_move(move) 
+                                moves.append(move)
+        moves.sort(key=lambda x: x.score, reverse=True) 
         return moves
 
-    def calculate_score(self, color):
-        # Inicializamos la puntuación del jugador
-        player_score = 0
+    def is_interesting_position(self, x, y):
+        for dx in range(-2, 3):
+            for dy in range(-2, 3):
+                nx, ny = x + dx, y + dy
+                if isValidPos(nx, ny) and self.m_board[nx][ny] != Defines.NOSTONE:
+                    return True
+        return False
 
-        # Definimos direcciones en las que buscar piedras conectadas
+    def calculate_score(self, color):
+        player_score = 0
         directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
+        score_per_line = {1: 1, 2: 5, 3: 10, 4: 50, 5: 200, 6: 1000}
 
         for i in range(1, Defines.GRID_NUM - 1):
             for j in range(1, Defines.GRID_NUM - 1):
                 if self.m_board[i][j] == color:
-                    # Buscamos patrones de piedras en línea en todas las direcciones
                     for direction in directions:
                         stones_in_line = 1
-                        for step in range(1, 6):  # Buscamos hasta 6 piedras en línea
-                            x = i + step * direction[0]
-                            y = j + step * direction[1]
-                            if isValidPos(x, y) and self.m_board[x][y] == color:
-                                stones_in_line += 1
-                            else:
+                        potential_in_line = 0
+                        blocked_ends = 0
+
+                        # Hacia adelante en la dirección
+                        x, y = i, j
+                        while stones_in_line < 6:
+                            x += direction[0]
+                            y += direction[1]
+                            if not isValidPos(x, y) or self.m_board[x][y] != color:
+                                if isValidPos(x, y) and self.m_board[x][y] != Defines.NOSTONE:
+                                    blocked_ends += 1
                                 break
-                        # Calificamos el patrón de piedras en línea
-                        if stones_in_line == 6:
-                            # El jugador tiene 6 en línea, ¡ganó el juego!
-                            return Defines.MAXINT
-                        player_score += stones_in_line
+                            stones_in_line += 1
+
+                        # Hacia atrás en la dirección
+                        x, y = i - direction[0], j - direction[1]
+                        while stones_in_line < 6:
+                            if not isValidPos(x, y) or self.m_board[x][y] != color:
+                                if isValidPos(x, y) and self.m_board[x][y] != Defines.NOSTONE:
+                                    blocked_ends += 1
+                                break
+                            stones_in_line += 1
+                            x -= direction[0]
+                            y -= direction[1]
+
+                        # Evaluar potencial y bloqueo
+                        if blocked_ends < 2:
+                            potential_in_line = 6 - stones_in_line - blocked_ends
+                            player_score += score_per_line[stones_in_line] + potential_in_line
 
         return player_score
 
     def is_terminal_node(self):
-        # Verificamos si el juego ha llegado a su fin
         for i in range(1, Defines.GRID_NUM - 1):
             for j in range(1, Defines.GRID_NUM - 1):
                 if self.m_board[i][j] == Defines.NOSTONE:
-                    # Todavía hay espacios vacíos en el tablero, el juego no ha terminado.
                     return False
+        return True
+
 
     # Si no hay espacios vacíos, el juego termina en empate.
         return True
