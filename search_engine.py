@@ -5,7 +5,7 @@ from defines import StoneMove
 
 
 class SearchEngine():
-    def __init__(self):
+    def _init_(self):
         self.m_board = None
         self.m_chess_type = None
         self.m_alphabeta_depth = None
@@ -16,8 +16,9 @@ class SearchEngine():
         self.m_chess_type = color
         self.m_alphabeta_depth = alphabeta_depth
         self.m_total_nodes = 0
-        
+
     def alpha_beta_search(self, depth, alpha, beta, maximizing_player, best_move, current_move):
+        
         if depth == 0 or self.is_terminal_node():
             return self.evaluate_board(maximizing_player)
 
@@ -64,7 +65,7 @@ class SearchEngine():
         x, y = move.positions[0].x, move.positions[0].y
         return self.m_board[x][y] == Defines.NOSTONE
 
-    
+
     def evaluate_board(self, maximizing_player):
         if maximizing_player:
             player_color = Defines.BLACK
@@ -99,21 +100,136 @@ class SearchEngine():
                                 move.positions[0].y = j1
                                 move.positions[1].x = i2
                                 move.positions[1].y = j2
-                                self.make_move(move, self.m_chess_type) 
-                                move.score = self.calculate_score(self.m_chess_type)  
-                                self.undo_move(move) 
+                                self.make_move(move, self.m_chess_type)
+                                move.score = self.calculate_score(self.m_chess_type)
+                                self.undo_move(move)
                                 moves.append(move)
-        moves.sort(key=lambda x: x.score, reverse=True) 
-        return moves
+        moves.sort(key=lambda x: x.score, reverse=True)
+        menosMovimientos = moves[:5]
+        return menosMovimientos
 
     def is_interesting_position(self, x, y):
+        if(self.m_board[x][y] != Defines.NOSTONE):
+            return False
+        
         for dx in range(-2, 3):
             for dy in range(-2, 3):
                 nx, ny = x + dx, y + dy
-                if isValidPos(nx, ny) and self.m_board[nx][ny] != Defines.NOSTONE:
+                if(self.m_board[nx][ny] != Defines.NOSTONE):
+                    return False
+                else:
                     return True
-        return False
+            
 
+    # def calculate_score(self, color):
+    #     player_score = 0
+    #     directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
+    #     score_per_line = {1: 1, 2: 5, 3: 10, 4: 50, 5: 200, 6: 1000}
+
+    #     for i in range(1, Defines.GRID_NUM - 1):
+    #         for j in range(1, Defines.GRID_NUM - 1):
+    #             if self.m_board[i][j] == color:
+    #                 for direction in directions:
+    #                     stones_in_line = 1
+    #                     potential_in_line = 0
+    #                     blocked_ends = 0
+
+    #                     # Hacia adelante en la dirección
+    #                     x, y = i, j
+    #                     while stones_in_line < 6:
+    #                         x += direction[0]
+    #                         y += direction[1]
+    #                         if not isValidPos(x, y) or self.m_board[x][y] != color:
+    #                             if isValidPos(x, y) and self.m_board[x][y] != Defines.NOSTONE:
+    #                                 blocked_ends += 1
+    #                             break
+    #                         stones_in_line += 1
+
+    #                     # Hacia atrás en la dirección
+    #                     x, y = i - direction[0], j - direction[1]
+    #                     while stones_in_line < 6:
+    #                         if not isValidPos(x, y) or self.m_board[x][y] != color:
+    #                             if isValidPos(x, y) and self.m_board[x][y] != Defines.NOSTONE:
+    #                                 blocked_ends += 1
+    #                             break
+    #                         stones_in_line += 1
+    #                         x -= direction[0]
+    #                         y -= direction[1]
+
+    #                     # Evaluar potencial y bloqueo
+    #                     if blocked_ends < 2:
+    #                         potential_in_line = 6 - stones_in_line - blocked_ends
+    #                         player_score += score_per_line[stones_in_line] + potential_in_line
+
+    #     return player_score
+    # def get_possible_moves(self):
+    #     moves = []
+    #     interesting_positions = self.find_interesting_positions()
+
+    #     for pos1 in interesting_positions:
+    #         for pos2 in interesting_positions:
+    #             if pos1 != pos2:
+    #                 move = StoneMove()
+    #                 move.positions[0].x, move.positions[0].y = pos1
+    #                 move.positions[1].x, move.positions[1].y = pos2
+    #                 if self.is_valid_move(move):
+    #                     self.make_move(move, self.m_chess_type)
+    #                     move.score = self.calculate_score(self.m_chess_type)
+    #                     self.undo_move(move)
+    #                     moves.append(move)
+    #     moves.sort(key=lambda x: x.score, reverse=True)
+    #     return moves
+
+
+
+    # def find_interesting_positions(self):
+    #     interesting_positions = set()
+    #     for x in range(Defines.GRID_NUM):
+    #         for y in range(Defines.GRID_NUM):
+    #             if self.m_board[x][y] != Defines.NOSTONE:
+    #                 for dx in range(-1, 2):
+    #                     for dy in range(-1, 2):
+    #                         nx, ny = x + dx, y + dy
+    #                         if 0 <= nx < Defines.GRID_NUM and 0 <= ny < Defines.GRID_NUM and self.m_board[nx][ny] == Defines.NOSTONE:
+    #                             interesting_positions.add((nx, ny))
+    #     return interesting_positions
+
+    def is_terminal_node(self):
+        for i in range(1, Defines.GRID_NUM - 1):
+            for j in range(1, Defines.GRID_NUM - 1):
+                if self.m_board[i][j] == Defines.NOSTONE:
+                    return False
+        return True
+    
+    # def calculate_score(self, color):
+    #     player_score = 0
+    #     for i in range(Defines.GRID_NUM):
+    #         for j in range(Defines.GRID_NUM):
+    #             if self.m_board[i][j] == color:
+    #                 player_score += self.evaluate_position(i, j, color)
+    #     return player_score
+
+    # def evaluate_position(self, x, y, color):
+    #     score = 0
+    #     directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
+    #     for dx, dy in directions:
+    #         count = 0
+    #         open_ends = 0
+    #         for step in range(1, 6):
+    #             nx, ny = x + dx * step, y + dy * step
+    #             if not isValidPos(nx, ny):
+    #                 break
+    #             if self.m_board[nx][ny] == color:
+    #                 count += 1
+    #             elif self.m_board[nx][ny] == Defines.NOSTONE:
+    #                 open_ends += 1
+    #                 break
+    #             else:
+    #                 break
+    #         if open_ends > 0:
+    #             score += count**2
+    #     return score
+    
     def calculate_score(self, color):
         player_score = 0
         directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
@@ -155,14 +271,6 @@ class SearchEngine():
                             player_score += score_per_line[stones_in_line] + potential_in_line
 
         return player_score
-
-    def is_terminal_node(self):
-        for i in range(1, Defines.GRID_NUM - 1):
-            for j in range(1, Defines.GRID_NUM - 1):
-                if self.m_board[i][j] == Defines.NOSTONE:
-                    return False
-        return True
-
 
     # Si no hay espacios vacíos, el juego termina en empate.
         return True
